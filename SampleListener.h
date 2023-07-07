@@ -18,11 +18,11 @@ class SampleListener : public Leap::Listener {
     virtual void onDeviceChange(const Leap::Controller&);
     virtual void onServiceConnect(const Leap::Controller&);
     virtual void onServiceDisconnect(const Leap::Controller&);
-    virtual void onImage(const Leap::Controller&);
+  
 
   private:
     cv::Mat leapImageToCvMat(const Leap::Image&);
-    float* orientationPRY(const Leap::Hand&);
+    float* handData(const Leap::Hand& , const cv::Mat&);
 };
 
 #endif SAMPLELISTENER_H

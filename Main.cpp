@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
   cout<<"I modified this"<<endl;
 
   // Create an OpenCV window
-  cv::namedWindow("Leap Motion Image", cv::WINDOW_NORMAL);
+  cv::namedWindow("Leap Motion Image", cv::WINDOW_NORMAL);  
 
   // Have the sample listener receive events from the controller
   controller.addListener(listener);
