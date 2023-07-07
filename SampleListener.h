@@ -8,6 +8,9 @@
 
 class SampleListener : public Leap::Listener {
   public:
+
+    bool  _record = false;
+
     virtual void onInit(const Leap::Controller&);
     virtual void onConnect(const Leap::Controller&);
     virtual void onDisconnect(const Leap::Controller&);
@@ -18,6 +21,7 @@ class SampleListener : public Leap::Listener {
     virtual void onDeviceChange(const Leap::Controller&);
     virtual void onServiceConnect(const Leap::Controller&);
     virtual void onServiceDisconnect(const Leap::Controller&);
+    void setRecordStatus(bool);
   
 
   private:

@@ -68,7 +68,7 @@ void SampleListener::onServiceDisconnect(const Controller& controller) {
 }
 
 void SampleListener::onFrame(const Controller& controller) {
-  
+  cout<<_record<<endl;
   // Get the most recent frame and report some basic information
   const Frame frame = controller.frame();
   const Leap::ImageList images = controller.images();     
@@ -88,6 +88,7 @@ void SampleListener::onFrame(const Controller& controller) {
       const Hand leftmost = hands.leftmost();
       const Hand rightmost = hands.rightmost(); 
 
+      
       float* left_data = handData(leftmost,cvImage);
       float* right_data = handData(rightmost,cvImage);
 
@@ -99,7 +100,22 @@ void SampleListener::onFrame(const Controller& controller) {
 
     // Display the image using OpenCV
     cv::imshow("Leap Motion Image", cvImage);
-    cv::waitKey(1);
+    
+    int check = cv::waitKey(10);
+    // cout << check<<endl;
+
+    if(check == 49){
+      setRecordStatus(true);
+      cout<<"Start recording"<<endl;
+    }
+    else if(check == 50){
+      setRecordStatus(false);
+      cout<<"Stop recording"<<endl;
+    }
+    // else if(check[0] == 'q'){
+    //   cout<<"End program"<<endl;
+    //   break;
+    // }
 
     //Resize the window
     cv::resizeWindow("Leap Motion Image",cv::Size(1000,1000));
@@ -108,7 +124,7 @@ void SampleListener::onFrame(const Controller& controller) {
 }
 
 
-cv::Mat SampleListener::leapImageToCvMat(const Leap::Image& image) {
+cv::Mat SampleListener::leapImageToCvMat(const Leap::Image& image ) {
     int width = image.width();
     int height = image.height();
     const unsigned char* imageData = image.data();
@@ -124,8 +140,8 @@ float* SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
 
   string handType = hand.isLeft() ? "Left hand" : "Right hand";
   const Vector position = hand.palmPosition();
-  cout << string(2, ' ') << handType << ", id: " << hand.id()
-            << ", palm position: " << position << endl;
+  // cout << string(2, ' ') << handType << ", id: " << hand.id()
+  //           << ", palm position: " << position << endl;
   // Get the hand's normal vector and direction
   const Vector normal = hand.palmNormal();
   const Vector direction = hand.direction();
@@ -133,13 +149,13 @@ float* SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
   // Calculate the hand's pitch, roll, and yaw angles
   
   float* vec = new float[3];
-  vec[0] = direction.pitch();
-  vec[1] = normal.roll();
-  vec[2] = direction.yaw();
+  vec[0] = direction.pitch()* RAD_TO_DEG;
+  vec[1] = normal.roll() * RAD_TO_DEG;
+  vec[2] = direction.yaw() ;
   
-  cout <<"pitch: " << vec[0] * RAD_TO_DEG << " degrees, "
-        << "roll: " << vec[1] * RAD_TO_DEG << " degrees, "
-        << "yaw: " << vec[2] *RAD_TO_DEG << " degrees" << endl;
+  // cout <<"pitch: " << vec[0]  << " degrees, "
+  //       << "roll: " << vec[1]  << " degrees, "
+  //       << "yaw: " << vec[2]  << " degrees" << endl;
   cv::Point point1(position.x, position.y);
   cv::Point point2(position.x + 100*normal.x, position.y + 100*normal.y);
   // cv::line(image,point1,point2, cv::Scalar(255, 0, 0));
@@ -148,31 +164,45 @@ float* SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
   ofstream outputFile;
   outputFile.open("output.txt",ios::app);
 
+  
   if(hand.isLeft()){
 
     cv::putText(image, "Left hand", cv::Point(525, 30),  cv::FONT_HERSHEY_SIMPLEX , 0.55, cv::Scalar(255, 0, 0), 1);
-    outputFile << vec[0] << ","
-               << vec[1] <<  ","
-               << vec[2] <<  ","
-               << '0' <<  ","
-               << '0' <<  ","
-               << '0' <<  ","<<endl;
+    if(_record){
+
+      outputFile << vec[0] << ","
+                << vec[1] <<  ","
+                << vec[2] <<  ","
+                << '0' <<  ","
+                << '0' <<  ","
+                << '0' <<  ","<<endl;
+    }
   } 
   else{
 
     cv::putText(image, "Right hand", cv::Point(525, 50), cv::FONT_HERSHEY_SIMPLEX , 0.55, cv::Scalar(255, 0, 0), 1);
-    outputFile << '0' <<  ","
-               << '0' <<  ","
-               << '0' <<  ","
-               << vec[0] << ","
-               << vec[1] <<  ","
-               << vec[2] <<  ","<<endl;
+    if(_record){
+      
+      outputFile << '0' <<  ","
+                << '0' <<  ","
+                << '0' <<  ","
+                << vec[0] << ","
+                << vec[1] <<  ","
+                << vec[2] <<  ","<<endl;
+    }
 
   }
+  
+
   outputFile.close();
 
   return vec;
 
 
 }
+
+void SampleListener::setRecordStatus(bool set_record){
+  _record = set_record;
+}
+
 

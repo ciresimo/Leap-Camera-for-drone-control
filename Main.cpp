@@ -30,10 +30,15 @@ int main(int argc, char** argv) {
     controller.setPolicy(Leap::Controller::POLICY_BACKGROUND_FRAMES); 
 
   }
+  cout << "Press 's' to start recording" << endl;
+  cout << "Press 'p' to stop recording" << endl;
+  cout << "Press 'q' to exit the program" << endl;
 
-  // Keep this process running until Enter is pressed
-  std::cout << "Press Enter to quit..." << std::endl;
-  std::cin.get();
+  // // Keep this process running until Enter is pressed
+  cout << "Press Enter to quit..." << endl;
+  cin.get();
+  
+  
 
   // Remove the sample listener when done
   controller.removeListener(listener);
