@@ -9,7 +9,9 @@
 class SampleListener : public Leap::Listener {
   public:
 
-    bool  _record = false;
+    bool _stop_program = false;
+    int _frames_to_collect ;
+    
 
     virtual void onInit(const Leap::Controller&);
     virtual void onConnect(const Leap::Controller&);
@@ -22,9 +24,13 @@ class SampleListener : public Leap::Listener {
     virtual void onServiceConnect(const Leap::Controller&);
     virtual void onServiceDisconnect(const Leap::Controller&);
     void setRecordStatus(bool);
+    void setOutputFile(const std::string);
   
 
   private:
+    bool _record = false;
+    int _frames;
+    std::string _output_file;
     cv::Mat leapImageToCvMat(const Leap::Image&);
     float* handData(const Leap::Hand& , const cv::Mat&);
 };

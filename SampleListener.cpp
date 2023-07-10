@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cstring>
 #include <fstream>
+#include <ctime>
+#include <filesystem>
 #include <opencv2/opencv.hpp>
 #include "Leap.h"
 #include "SampleListener.h"
@@ -18,6 +20,8 @@ const string stateNames[] = {"STATE_INVALID", "STATE_START", "STATE_UPDATE", "ST
 
 void SampleListener::onInit(const Controller& controller) {
   cout << "Initialized" << endl;
+  _frames = 0;
+  _frames_to_collect = 200;
 }
 
 void SampleListener::onConnect(const Controller& controller) {
@@ -29,7 +33,7 @@ void SampleListener::onConnect(const Controller& controller) {
 
   //Create the output file, or clean it if already existing
   ofstream outputFile;
-  outputFile.open("output.txt");
+  outputFile.open(_output_file);
 }
 
 void SampleListener::onDisconnect(const Controller& controller) {
@@ -68,7 +72,7 @@ void SampleListener::onServiceDisconnect(const Controller& controller) {
 }
 
 void SampleListener::onFrame(const Controller& controller) {
-  cout<<_record<<endl;
+  
   // Get the most recent frame and report some basic information
   const Frame frame = controller.frame();
   const Leap::ImageList images = controller.images();     
@@ -89,7 +93,7 @@ void SampleListener::onFrame(const Controller& controller) {
       const Hand rightmost = hands.rightmost(); 
 
       
-      float* left_data = handData(leftmost,cvImage);
+      // float* left_data = handData(leftmost,cvImage);
       float* right_data = handData(rightmost,cvImage);
 
       
@@ -98,27 +102,44 @@ void SampleListener::onFrame(const Controller& controller) {
     cv::putText(cvImage, "Leap Motion Camera", cv::Point(50, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 0, 255), 2);
 
 
+
+    //Start and stop collecting data
+    int check = cv::waitKey(10);
+    
+    if(check == 49){
+
+      setRecordStatus(true);
+      _frames = 0;
+      cout<<"Start recording"<<endl;
+      
+    }
+    else if(check == 50 || _frames == _frames_to_collect){
+
+      setRecordStatus(false);
+      _frames = 0;
+      cout<<"Stop recording"<<endl;
+
+    }
+    else if(check == 51){
+
+      _stop_program = true;
+      cout<<"Stopping the program"<<endl;
+
+    }
+    
+    //When recording, count the number of frames. Stop recording at 50 frames
+    if(_record){
+
+      cout<<_frames++<<endl;
+      cv::putText(cvImage, "Recording", cv::Point(525, 150),  cv::FONT_HERSHEY_SIMPLEX , 0.55, cv::Scalar(255, 0, 0), 1);
+    }
+
     // Display the image using OpenCV
     cv::imshow("Leap Motion Image", cvImage);
     
-    int check = cv::waitKey(10);
-    // cout << check<<endl;
-
-    if(check == 49){
-      setRecordStatus(true);
-      cout<<"Start recording"<<endl;
-    }
-    else if(check == 50){
-      setRecordStatus(false);
-      cout<<"Stop recording"<<endl;
-    }
-    // else if(check[0] == 'q'){
-    //   cout<<"End program"<<endl;
-    //   break;
-    // }
-
     //Resize the window
     cv::resizeWindow("Leap Motion Image",cv::Size(1000,1000));
+
   }
 
 }
@@ -140,9 +161,7 @@ float* SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
 
   string handType = hand.isLeft() ? "Left hand" : "Right hand";
   const Vector position = hand.palmPosition();
-  // cout << string(2, ' ') << handType << ", id: " << hand.id()
-  //           << ", palm position: " << position << endl;
-  // Get the hand's normal vector and direction
+  
   const Vector normal = hand.palmNormal();
   const Vector direction = hand.direction();
 
@@ -151,18 +170,10 @@ float* SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
   float* vec = new float[3];
   vec[0] = direction.pitch()* RAD_TO_DEG;
   vec[1] = normal.roll() * RAD_TO_DEG;
-  vec[2] = direction.yaw() ;
-  
-  // cout <<"pitch: " << vec[0]  << " degrees, "
-  //       << "roll: " << vec[1]  << " degrees, "
-  //       << "yaw: " << vec[2]  << " degrees" << endl;
-  cv::Point point1(position.x, position.y);
-  cv::Point point2(position.x + 100*normal.x, position.y + 100*normal.y);
-  // cv::line(image,point1,point2, cv::Scalar(255, 0, 0));
-  //cv::circle(image,point1,50,cv::Scalar(255, 0, 0));
-
+  vec[2] = direction.yaw() ; 
+ 
   ofstream outputFile;
-  outputFile.open("output.txt",ios::app);
+  outputFile.open(_output_file,ios::app);
 
   
   if(hand.isLeft()){
@@ -170,7 +181,8 @@ float* SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
     cv::putText(image, "Left hand", cv::Point(525, 30),  cv::FONT_HERSHEY_SIMPLEX , 0.55, cv::Scalar(255, 0, 0), 1);
     if(_record){
 
-      outputFile << vec[0] << ","
+      outputFile << _frames <<  ","      
+                << vec[0] << ","
                 << vec[1] <<  ","
                 << vec[2] <<  ","
                 << '0' <<  ","
@@ -183,7 +195,8 @@ float* SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
     cv::putText(image, "Right hand", cv::Point(525, 50), cv::FONT_HERSHEY_SIMPLEX , 0.55, cv::Scalar(255, 0, 0), 1);
     if(_record){
       
-      outputFile << '0' <<  ","
+      outputFile << _frames <<  ","
+                << '0' <<  ","
                 << '0' <<  ","
                 << '0' <<  ","
                 << vec[0] << ","
@@ -203,6 +216,11 @@ float* SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
 
 void SampleListener::setRecordStatus(bool set_record){
   _record = set_record;
+}
+
+void SampleListener::setOutputFile(const string file_name){
+  _output_file = file_name;
+  cout<<"Output file : "<<_output_file<<endl;
 }
 
 
