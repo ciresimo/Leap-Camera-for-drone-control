@@ -15,26 +15,37 @@ int main(int argc, char** argv) {
   SampleListener listener;
   Controller controller;
 
-  //Create the output folder if it doesn't exist
-  //I could create a smarter way to organize things
-  fs::create_directory("Output");
+  //Get information from input:
+  // - subject
+  // - gesture
+  // - rep
 
-  //Assign the outputfile name from input. The default case is "Output.txt"
-  if (argc > 1){
+  //Store the .csv file in Output/gesture/subject
 
-    cout<<"set the name: "<<argv[1]<<endl;   
-    listener.setOutputFile(argv[1]);
+  if (argc == 4){
+
+   
+    string input1 = argv[1];  
+    string input2 = argv[2];
+    string input3 = argv[3];
+    string file_repository = "Output/" + input2 +"/subj_" + input1 ;
+    string file_name = file_repository +"/" + "subj_" + input1 + "_ges_" + input2 + "_rep_" + input3 + ".csv";
+    filesystem::create_directories(file_repository);
+    listener.setOutputFile(file_name);
 
   }
   else{
 
-    listener.setOutputFile("Output/Output.txt");
+    filesystem::create_directory("Output");
+    listener.setOutputFile("Output/Output.csv");
 
   }
 
   // Have the sample listener receive events from the controller
   controller.addListener(listener);
 
+  //Set the mode of use as Head-mounted. If the camera is instead placed on the table, simply comment this line
+  // controller.setPolicy(Leap::Controller::POLICY_OPTIMIZE_HMD);
 
   //Allow the stream of immages
   controller.setPolicy(Leap::Controller::POLICY_IMAGES);

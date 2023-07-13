@@ -21,7 +21,7 @@ const string stateNames[] = {"STATE_INVALID", "STATE_START", "STATE_UPDATE", "ST
 void SampleListener::onInit(const Controller& controller) {
   cout << "Initialized" << endl;
   _frames = 0;
-  _frames_to_collect = 200;
+  _frames_to_collect = 100;
 }
 
 void SampleListener::onConnect(const Controller& controller) {
@@ -145,37 +145,27 @@ float* SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
   ofstream outputFile;
   outputFile.open(_output_file,ios::app);
 
-  
+  //Strem to video if the hand is left or right
   if(hand.isLeft()){
 
     cv::putText(image, "Left hand", cv::Point(525, 30),  cv::FONT_HERSHEY_SIMPLEX , 0.55, cv::Scalar(255, 0, 0), 1);
-    if(_record){
-
-      outputFile << _frames <<  ","      
-                << vec[0] << ","
-                << vec[1] <<  ","
-                << vec[2] <<  ","
-                << '0' <<  ","
-                << '0' <<  ","
-                << '0' <<  ","<<endl;
-    }
+   
   } 
   else{
 
     cv::putText(image, "Right hand", cv::Point(525, 50), cv::FONT_HERSHEY_SIMPLEX , 0.55, cv::Scalar(255, 0, 0), 1);
-    if(_record){
-      
-      outputFile << _frames <<  ","
-                << '0' <<  ","
-                << '0' <<  ","
-                << '0' <<  ","
-                << vec[0] << ","
-                << vec[1] <<  ","
-                << vec[2] <<  ","<<endl;
-    }
 
   }
   
+  //If the _record variable has been set to true, print data to file
+  if(_record){
+    
+    outputFile << _frames <<  ","
+              << hand.isLeft() << ","       //Indicates the hand is left(1) or right(0)            
+              << vec[0] << ","
+              << vec[1] <<  ","
+              << vec[2] << "\n";
+  }
 
   outputFile.close();
 
