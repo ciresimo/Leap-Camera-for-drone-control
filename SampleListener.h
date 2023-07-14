@@ -24,7 +24,7 @@ class SampleListener : public Leap::Listener {
     int _frames;
     std::string _output_file;
     cv::Mat leapImageToCvMat(const Leap::Image&);
-    float* handData(const Leap::Hand& , const cv::Mat&);
+    void handData(const Leap::Hand& , const cv::Mat&); //Potrei renderla void
 };
 
 #endif SAMPLELISTENER_H

@@ -64,7 +64,7 @@ void SampleListener::onFrame(const Controller& controller) {
 
       
       // float* left_data = handData(leftmost,cvImage);
-      float* right_data = handData(rightmost,cvImage);
+      handData(rightmost,cvImage);
 
       
     }
@@ -127,23 +127,7 @@ cv::Mat SampleListener::leapImageToCvMat(const Leap::Image& image ) {
 }
 
 
-float* SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
-
-  string handType = hand.isLeft() ? "Left hand" : "Right hand";
-  const Vector position = hand.palmPosition();
-  
-  const Vector normal = hand.palmNormal();
-  const Vector direction = hand.direction();
-
-  // Calculate the hand's pitch, roll, and yaw angles
-  
-  float* vec = new float[3];
-  vec[0] = direction.pitch()* RAD_TO_DEG;
-  vec[1] = normal.roll() * RAD_TO_DEG;
-  vec[2] = direction.yaw() ; 
- 
-  ofstream outputFile;
-  outputFile.open(_output_file,ios::app);
+void SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
 
   //Strem to video if the hand is left or right
   if(hand.isLeft()){
@@ -157,6 +141,61 @@ float* SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
 
   }
   
+  const Vector position = hand.palmPosition();
+  
+  const Vector normal = hand.palmNormal();
+  const Vector direction = hand.direction();
+
+  // Calculate the hand's pitch, roll, and yaw angles
+  
+  float* vec = new float[3];
+  vec[0] = direction.pitch()* RAD_TO_DEG;
+  vec[1] = direction.yaw() * RAD_TO_DEG ; 
+  vec[2] = normal.roll() * RAD_TO_DEG;
+
+  // Get fingers
+  const FingerList fingers = hand.fingers();
+
+  // Consider just Thumb and Middle  
+
+  float thumb_yaw;
+  float middle_yaw;
+  float* thumb_pos = new float[3];
+  float* middle_pos = new float[3];
+
+
+  for (FingerList::const_iterator fl = fingers.begin(); fl != fingers.end(); ++fl) {
+    const Finger finger = *fl;
+
+    if(finger.type() == 0){
+
+      thumb_yaw = atan2(finger.direction()[0],-finger.direction()[2])  ; //see https://stackoverflow.com/questions/26555040/yaw-pitch-and-roll-to-glmrotate
+
+      thumb_pos[0] = finger.tipPosition()[0];
+      thumb_pos[1] = finger.tipPosition()[1];
+      thumb_pos[2] = finger.tipPosition()[2];   
+            
+    }
+    else if(finger.type() == 2){
+
+      middle_yaw = atan2(finger.direction()[0],-finger.direction()[2])  ;
+      
+      middle_pos[0] = finger.tipPosition()[0];
+      middle_pos[1] = finger.tipPosition()[1];
+      middle_pos[2] = finger.tipPosition()[2];
+
+      
+
+    }
+                
+    
+
+    
+  }
+ 
+  ofstream outputFile;
+  outputFile.open(_output_file,ios::app);  
+  
   //If the _record variable has been set to true, print data to file
   if(_record){
     
@@ -164,12 +203,29 @@ float* SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
               << hand.isLeft() << ","       //Indicates the hand is left(1) or right(0)            
               << vec[0] << ","
               << vec[1] <<  ","
-              << vec[2] << "\n";
+              << vec[2] << ","
+              << position[0] << ","
+              << position[1] << ","
+              << position[2] << ","
+              << hand.grabStrength () << "," //suggested in the paper. I think is not necessary
+              << thumb_yaw << "," 
+              << middle_yaw << ","
+              << thumb_pos[0] << ","
+              << thumb_pos[1] << ","
+              << thumb_pos[1] << ","
+              << middle_pos[0] << ","
+              << middle_pos[1] << ","
+              << middle_pos[2] << "\n";
   }
 
   outputFile.close();
 
-  return vec;
+  delete [] thumb_pos;
+  delete [] middle_pos;
+  delete [] vec;
+  
+
+  return ;
 
 
 }

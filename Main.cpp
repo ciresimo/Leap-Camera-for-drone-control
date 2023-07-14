@@ -20,6 +20,8 @@ int main(int argc, char** argv) {
   // - gesture
   // - rep
 
+  //Always referr to the documentation provided for collecting the data
+
   //Store the .csv file in Output/gesture/subject
 
   if (argc == 4){
@@ -28,6 +30,7 @@ int main(int argc, char** argv) {
     string input1 = argv[1];  
     string input2 = argv[2];
     string input3 = argv[3];
+    
     string file_repository = "Output/" + input2 +"/subj_" + input1 ;
     string file_name = file_repository +"/" + "subj_" + input1 + "_ges_" + input2 + "_rep_" + input3 + ".csv";
     filesystem::create_directories(file_repository);
