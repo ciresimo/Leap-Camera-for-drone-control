@@ -34,6 +34,30 @@ void SampleListener::onConnect(const Controller& controller) {
   //Create the output file, or clean it if already existing
   ofstream outputFile;
   outputFile.open(_output_file);
+
+  //Insert headers of the columns
+  outputFile << "frame" <<  ","
+              << "isLeft" << ","       //Indicates the hand is left(1) or right(0)            
+              << "pitch" << ","
+              << "yaw" <<  ","
+              << "roll" << ","
+              << "palm_x" << ","
+              << "palm_y" << ","
+              << "palm_z" << ","
+              << "grabStrength" << "," 
+              << "thumb_yaw" << "," 
+              << "middle_yaw" << ","
+              << "thumb_x" << ","
+              << "thumb_y" << ","
+              << "thumb_z" << ","
+              << "middle_x" << ","
+              << "middle_y"<< ","
+              << "middle_z" << "\n";
+
+
+  outputFile.close();
+
+
 }
 
 void SampleListener::onDisconnect(const Controller& controller) {
@@ -212,7 +236,7 @@ void SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
               << middle_yaw << ","
               << thumb_pos[0] << ","
               << thumb_pos[1] << ","
-              << thumb_pos[1] << ","
+              << thumb_pos[2] << ","
               << middle_pos[0] << ","
               << middle_pos[1] << ","
               << middle_pos[2] << "\n";
