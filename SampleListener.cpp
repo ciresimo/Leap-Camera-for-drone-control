@@ -53,11 +53,7 @@ void SampleListener::onConnect(const Controller& controller) {
               << "middle_x" << ","
               << "middle_y"<< ","
               << "middle_z" << "\n";
-
-
   outputFile.close();
-
-
 }
 
 void SampleListener::onDisconnect(const Controller& controller) {
@@ -86,9 +82,12 @@ void SampleListener::onFrame(const Controller& controller) {
       const Hand leftmost = hands.leftmost();
       const Hand rightmost = hands.rightmost(); 
 
-      
+      // TODO: find a way to decide if is used to collect sample for training or feed data into the NN
       // float* left_data = handData(leftmost,cvImage);
-      handData(rightmost,cvImage);
+      // handData(rightmost,cvImage);
+
+      // TODO: find a way to handle both hands. Could be simply store values in two csv and have the network reading in alternate way
+      continuousHandData(rightmost);
 
       
     }
@@ -208,13 +207,7 @@ void SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
       middle_pos[1] = finger.tipPosition()[1];
       middle_pos[2] = finger.tipPosition()[2];
 
-      
-
     }
-                
-    
-
-    
   }
  
   ofstream outputFile;
@@ -241,18 +234,85 @@ void SampleListener::handData(const Leap::Hand& hand, const cv::Mat& image){
               << middle_pos[1] << ","
               << middle_pos[2] << "\n";
   }
-
   outputFile.close();
-
   delete [] thumb_pos;
   delete [] middle_pos;
   delete [] vec;
-  
-
   return ;
-
-
 }
+
+void SampleListener::continuousHandData(const Leap::Hand& hand) {
+    static vector<vector<float>> dataBuffer; // Buffer to store 100 samples
+    static const int bufferSize = 100; // Size of the buffer
+    static const int numFeatures = 17; // Number of features per sample
+
+    // Collect data for the current hand
+    vector<float> data(numFeatures);
+    
+    // Determine if the hand is left or right
+    data[1] = hand.isLeft() ? 1.0f : 0.0f;
+
+    // Calculate the hand's pitch, roll, and yaw angles
+    const Vector position = hand.palmPosition();
+    const Vector normal = hand.palmNormal();
+    const Vector direction = hand.direction();
+
+    data[2] = direction.pitch() * RAD_TO_DEG;
+    data[3] = direction.yaw() * RAD_TO_DEG;
+    data[4] = normal.roll() * RAD_TO_DEG;
+
+    // Store palm position
+    data[5] = position[0];
+    data[6] = position[1];
+    data[7] = position[2];
+
+    // Store grab strength
+    data[8] = hand.grabStrength();
+
+    // Get fingers
+    const FingerList fingers = hand.fingers();
+    for (FingerList::const_iterator fl = fingers.begin(); fl != fingers.end(); ++fl) {
+        const Finger finger = *fl;
+        if (finger.type() == Finger::Type::TYPE_THUMB) {
+            data[9] = atan2(finger.direction()[0], -finger.direction()[2]);
+            data[10] = finger.tipPosition()[0];
+            data[11] = finger.tipPosition()[1];
+            data[12] = finger.tipPosition()[2];
+        } else if (finger.type() == Finger::Type::TYPE_MIDDLE) {
+            data[13] = atan2(finger.direction()[0], -finger.direction()[2]);
+            data[14] = finger.tipPosition()[0];
+            data[15] = finger.tipPosition()[1];
+            data[16] = finger.tipPosition()[2];
+        }
+    }
+
+    // Add frame number
+    data[0] = _frames;
+
+    // Add data to buffer
+    dataBuffer.push_back(data);
+
+    // Check if the buffer is full
+    if (dataBuffer.size() >= bufferSize) {
+        // Save buffer to CSV
+        ofstream outputFile;
+        outputFile.open(_output_file, ios::app);
+        for (const auto& sample : dataBuffer) {
+            for (size_t i = 0; i < sample.size(); ++i) {
+                outputFile << sample[i];
+                if (i < sample.size() - 1) {
+                    outputFile << ",";
+                }
+            }
+            outputFile << "\n";
+        }
+        outputFile.close();
+        
+        // Clear the buffer
+        dataBuffer.clear();
+    }
+}
+
 
 void SampleListener::setRecordStatus(bool set_record){
   _record = set_record;

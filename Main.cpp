@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
 
   if (argc == 4){
 
+    //This is used if user wants to collect data for training
    
     string input1 = argv[1];  
     string input2 = argv[2];
@@ -38,7 +39,8 @@ int main(int argc, char** argv) {
 
   }
   else{
-
+    
+    // This is used a run time by the application
     filesystem::create_directory("Output");
     listener.setOutputFile("Output/Output.csv");
 

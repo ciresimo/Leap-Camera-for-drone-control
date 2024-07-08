@@ -24,7 +24,8 @@ class SampleListener : public Leap::Listener {
     int _frames;
     std::string _output_file;
     cv::Mat leapImageToCvMat(const Leap::Image&);
-    void handData(const Leap::Hand& , const cv::Mat&); //Potrei renderla void
+    void handData(const Leap::Hand& , const cv::Mat&); //Function used to collect sample for training
+    void continuousHandData(const Leap::Hand&); //Function used to stream data for the NN
 };
 
 #endif SAMPLELISTENER_H
