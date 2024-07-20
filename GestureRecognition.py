@@ -70,8 +70,9 @@ def process_and_predict(file_path, model_path):
 
     # Print the prediction
     print(f"Predicted gesture: {predicted_gesture}")
+    return predicted_gesture
 
-# Example usage
+# Read the input from the camera and get the desired command 
 file_path = "Output/Output.csv"
-model_path = "GestureRecognitionNetwork.pth"  # Path to your saved model
-process_and_predict(file_path, model_path)
+model_path = "GestureRecognitionNetwork.pth"  
+desired_command = process_and_predict(file_path, model_path)
