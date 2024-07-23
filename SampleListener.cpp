@@ -83,7 +83,6 @@ void SampleListener::onFrame(const Controller& controller) {
       const Hand rightmost = hands.rightmost(); 
 
       // TODO: find a way to decide if is used to collect sample for training or feed data into the NN
-      // float* left_data = handData(leftmost,cvImage);
       // handData(rightmost,cvImage);
 
       // TODO: find a way to handle both hands. Could be simply store values in two csv and have the network reading in alternate way
@@ -119,14 +118,7 @@ void SampleListener::onFrame(const Controller& controller) {
       cout<<"Stopping the program"<<endl;
 
     }
-    
-    //When recording, count the number of frames. Stop recording at 50 frames
-    if(_record){
-
-      cout<<_frames++<<endl;
-      cv::putText(cvImage, "Recording", cv::Point(525, 150),  cv::FONT_HERSHEY_SIMPLEX , 0.55, cv::Scalar(255, 0, 0), 1);
-    }
-
+   
     // Display the image using OpenCV
     cv::imshow("Leap Motion Image", cvImage);
     
