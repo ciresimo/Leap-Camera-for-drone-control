@@ -1,0 +1,225 @@
+\documentclass[a4paper,10pt,twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{color}
+\usepackage{lipsum}   % sert à mettre bcp de texte
+\usepackage{subfiles}
+\usepackage{hyperref}       %lien
+\usepackage{graphicx}       
+\usepackage[left=2cm, right=2cm, top=2cm, bottom=2cm]{geometry}
+\usepackage{indentfirst}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\setlist{nolistsep}
+\usepackage{multicol}
+\usepackage{amssymb}
+\hypersetup{
+dvips,
+backref=true, %permet d'ajouter des liens dans...
+pagebackref=true,%...les bibliographies
+hyperindex=true, %ajoute des liens dans les index.
+colorlinks=true, %colorise les liens
+breaklinks=true, %permet le retour à la ligne dans les liens trop longs
+urlcolor= blue, %couleur des hyperliens
+linkcolor= black, %couleur des liens internes
+bookmarks=blue, %créé des signets pour Acrobat
+bookmarksopen=true}
+
+\title{Hand-Gesture-based control of a quadcopter in a simulated environment}
+\author{CIRESA Simone, LELOIR Arnaud, LUCIANO Vlad,  MEROLI Alessandro}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+Artificial intelligence is getting more and more promiscious in our daily life. The reason is its hability to find extremely complicated patters in huge amounts of data and its hability to be trained to fulfill tasks needing high acuracy. These two features allow this tool to simplify tasks for humans, hence its role in handling difficult procedures. Being able to control a drone has always been a complex task needing training to be properly handled; that's why simplifying the way it is commanded thanks to AI seems relevant.
+
+Some \href{https://www.mdpi.com/2313-433X/6/8/73}{recent works} have allowed to use AI for recognizing hand recognition with high success rate. Some \href{https://books.google.fr/books?hl=it&lr=&id=nAqCEAAAQBAJ&oi=fnd&pg=PP1&dq=control+drones+AI&ots=Dzd2x8STG7&sig=rMpDtehOxov1wGm-jGWoY0_UeiU&redir_esc=y#v=onepage&q=control%20drones%20AI&f=false}{other studies} have shown that using AI for handling drones can be relevant ( in this paper the focus is on a drone network ). Our work consisted in combining these two ideas : use hand recognition and AI so that the drone's driver can control it by moving intuitively his hands, making the task easier.
+
+Then, we can state the main contribution of the project as simplifying the control of the drones for the neophytes with more intuitive commands using the hands.
+
+The rest of the report is organized as follows. In the second part, the related work used at the beginning of the project will be exposed. In the third part, the work of the project will be presented. The fourth part will focus on the results and how to use the set-up tools for pursuing the project. The fifth and last part will resume the work done and what is missing in order to have a fully functional system
+\section{Related work}.
+
+\href{https://ieeexplore.ieee.org/document/8748953}{Recent works} have studied the use of neural network for hand gesture recognition. This aricle has tested three different types of neural networks : a 2-layer fully connected neural network, a 5-layer fully connected neural network and 8-layers convolutional neural network. 
+
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{capture 3.png}
+    \caption{Results of the three types of neural network}
+    \label{fig:Fig2}
+    \end{figure}
+
+Regarding the efficiency of the detection on raw data, the third type of neural network has been chosen for the project.
+
+\href{https://ieeexplore.ieee.org/abstract/document/7509645}{Another article} studying the same subject used a Hidden Conditional Neural Field ( HCNF ). This method provided promising results, however this method is partially handled by the Leap Motion SDK used for this project, reducing its interest compared to the 8-layers convolutional neural network.
+
+\section{Description of the work for the project}
+
+\subsection{The general architecture}
+
+In general, the set-up for commanding a drone from remote is quite standard over most solutions: a base station sends out commands via RF or wifi signals to an antenna on the drone, then the hardware picks up the command and generates inputs for the flight controller using the MAVlink protocol. In sequence, the actuators are commanded with the appropriate voltage. 
+In our case, this sequence of events needs to be prefaced with the following procedure:\\
+\begin{itemize}
+    \item The LeapMotion camera captures the hand movement of the user on ground;
+    \item The motion is fed to a neural network run on a pc on ground and it generates an output command;
+    \item This is sent to the drone via wifi and from there it follows the same routines.
+\end{itemize}
+Since the network may still produce errors and the code, written in Python, used to generate the commands could potentially lead to undesired motion of a real drone, the most efficient and secure approach is to simulate the drone on a realistic software. This software is named Gazebo Sim and will be used as an external simulator for an ArduPilot quadcopter.
+This means that, once the NN outputs a command, the phyton code will produce the assigned MAVproxy command line and send the message to the fictional drone that, once armed in guided mode, will take off and execute. This effectively constitutes a Software In the Loop (SITL) approach, guaranteeing a good approximate of the real behavior of a drone under similar conditions. To get an even more realistic approximation of reality, a future implementation could be done with a Hardware In the Loop (HITL) approach, actually sending the command to the computer on board of a bladeless drone to execute the command using ad hoc simulation software.
+
+  \begin{figure}[H]
+    \centering
+    \frame{\includegraphics[width=1\linewidth]{Architecture.png}}
+    \caption{General scheme representing the varius interactions}
+    \label{fig:Fig1}
+    \end{figure}
+
+
+In specific terms, Gazebo Sim simulates the environment, including the physics, object interactions, and thus sensor modeling. ArduPilot, the open-source autopilot software, can be run on Gazebo to simulate and control a virtual drone, putting the environment in communication with the drone that in our case is a quadcopter. To allow for this comunication, a specific protocol is implemented, the so-colled MAVproxy interface, which figures as a telemetry link between the user, the vehicle, and the Gazebo Sim. This communication is "spoken" via a specific language formed by commands-denominated MAVlink messages that generally carry relevant data about both the user input as well as telemetry data and status reports.
+
+\subsection{Hand gestures stream and collection}
+Leap camera allows a continuos stream of data based on the position and motion of the hands. The IR camera already preprocesses the incoming data from the main sensor, allowing the user to access specific information through an API. The features we collected are those proposed in the previously mentioned article:
+\begin{itemize}
+    \item timestamp
+    \item left/right hand 
+    \item Hand direction pitch angle
+    \item Hand direction yaw angle
+    \item Hand direction roll angle
+    \item Palm center X coordinate
+    \item Palm center Y coordinate
+    \item Palm center Z coordinate
+    \item Hand grab strength
+    \item Thumb tip direction yaw angle
+    \item Middle tip direction yaw angel
+    \item Thumb tip X coordinate
+    \item Thumb tip Y coordinate
+    \item Thumb tip Z coordinate
+    \item Middle tip X coordinate
+    \item Middle tip Y coordinate
+    \item Middle tip Z coordinate
+    
+\end{itemize}
+In order to control a drone and simulate the behavior of a RC controller, the offboard controller should be able to send four inputs. Based on the desired level of autonomy (stabilized or position mode), these values will be setpoint for
+\begin{itemize}
+    \item roll rate (lateral velocity)
+    \item pitch rate (longitudinal velocity)
+    \item yaw rate
+    \item thrust (vertical velocity) 
+\end{itemize}
+Based on this requirements, we decided to assing each one of these to a specific hand movement
+For the right hand
+\begin{itemize}
+    \item Equilibrium Condition (ECR): hand fixed parallel to the camera plane. Palm looking 
+    downwards
+    \item Pitch 1 (P1R): flip the hand up from EC approx up to 90°
+    \item Pitch 2 (P2R): flip the hand down from EC approx up to -90°
+    \item Yaw 1 (Y1R): rotate the hand clockwise in the plane 	parallel to camera, from EC approx up to 45°
+    \item Yaw 2 (Y2R): rotate the hand counter-clockwise in the plane parallel to camera, from EC approx up to -45°
+\end{itemize}
+For the left hand
+\begin{itemize}
+    \item Equilibrium Condition (ECL): hand fixed parallel to the camera plane. Palm looking downwards
+    \item Roll 1 (R1L): rotation of the hand clockwise around the writs, from EC approx up to 90°
+    \item Roll 2 (R2L): rotation of the hand counter-clockwise around the writs, from EC approx up to 90°
+    \item Pitch 1 (P1L): flip the hand up from EC approx up to 90°
+    \item Pitch 2 (P2L): flip the hand down from EC approx up to 	-90°
+\end{itemize}
+
+In order to train a neural network, a good amount of data is required. We collected data from 20 volunteers, to have a good variety, and thus robustifying the system for new users. Each person performed every movement 3 times. All data are avalilable in the compressed folder in the git repository.
+
+\subsection{Neural Network}
+GestureNet is a feedforward neural network implemented in PyTorch. It is designed to process time-series data representing hand gestures and classify them into predefined categories. The architecture consists of a sequence of layers:
+\begin{itemize}
+    \item Input Layer: The network receives input tensors of shape (17, 100), where 17 represents the number of features extracted from hand movements, and 100 represents the time steps.
+    \item Hidden Layers: A series of linear layers with batch normalization and ELU (Exponential Linear Unit) activations are stacked to learn complex representations from the input data. The number of neurons in these layers gradually decreases, forming a funnel-like structure.
+    \item Output Layer: The final layer is a linear layer with 10 neurons, corresponding to the number of gesture classes. A softmax activation function is applied to produce probability distributions over the classes.
+\end{itemize}
+
+The GestureNet model is trained using a supervised learning approach. A dataset of labeled gesture sequences is used to optimize the network's parameters. The training process involves:
+\begin{itemize}
+    \item Data Loading: The dataset is divided into training, validation, and test sets.
+    \item Forward Pass: Input data is passed through the network to obtain predicted class probabilities.
+    \item Loss Calculation: A cross-entropy loss function measures the difference between predicted probabilities and true labels.
+    \item Forward Pass: Input data is passed through the network to obtain predicted class probabilities.
+    \item Loss Calculation: A cross-entropy loss function measures the difference between predicted probabilities and true labels.
+    \item Backpropagation: The gradients of the loss with respect to the network's parameters are computed.
+    \item Optimization: An optimizer, such as AdamW, updates the parameters based on the calculated gradients.
+
+\end{itemize}
+The model's performance is evaluated on the validation set during training to monitor progress and prevent overfitting. After training, the final evaluation is performed on the held-out test set to assess the generalization capabilities of the model.
+
+\subsection{The test python scripts}
+Once the architecture has been set up on our computers, it was needed to simulate the output from the neural network via commands external to the code that could control the simulation on Gazebo Sim. To do so, the python script \textit{control\_keyboard.py} has to be connected to Gazebo to control the simulated drone. This was achieved thanks to the \textit{dronekit} library. In fact, when running MavProxy, the launched terminal indicates a UDP address on which to connect to control the simulated drone that is given in the argument to the \textit{connect} command of \textit{dronekit}. When tests will be driven on a real drone, the UDP address of the physical engine will have to be registered instead in this file. To simulate external commands of the program, the \textit{tkinter} library has been chosen to use the keyboard instead of the hands.
+
+Then, two functions were written in the code to control altitude, yaw, pitch and roll. These functions use the \textit{dronekit} library that allows us to send commands thanks to the ardupilot protocol, exactly as would do a remote control to a real drone running ardupilot. Therefore, the code perfectly simulates a remote control from the point of view of the drone. Let's explain how these functions work :
+\begin{itemize}
+    \item \textit{set\_velocity\_body} controls roll, pitch and altitude. It uses the \underline{set\_position\_target\_ned\_encode} command from the ardupilot protocol. This command takes at firt argument the reference frame for defining velocities. The \underline{MAV\_FRAME\_BODY\_OFFSET\_NED} reference frame attached to the drone ( defined in the ardupilot library ) has been chosen so that the directions of the commands are dependent on the position of the body. Then, the bitmask had to be chosen so that the commands sends only the required motion. It has been set to select the velocities and the rotational speed ( for roll and pitch ) which are then given in argument of the function.
+
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{capture 1.png}
+    \caption{Function for controlling altitude, pith and roll}
+    \label{fig:Fig1}
+    \end{figure}
+
+    \item \textit{condition\_yaw} controls the yaw angle. The principle of the function is the same as \textit{set\_velocity\_body} but uses the \underline{command\_long\_encode} of the ardupilot protocol instead. This funtion takes as an argument the parameter we want to control, so \underline{MAV\_CMD\_CONDITION\_YAW} has been chosen to control yaw angle. Then the target angle, the rotational speed and the directon of the motion ( clockwise / anticlockwise ) are given in argument via the parameters \underline{angle}, \underline{heading} and \underline{dir}. It is relevant to say that the parameter \underline{is\_relative} has been set to \textit{True} by default so that the target angle is relative to the position of the drone.
+
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{capture 2.png}
+    \caption{Function for controlling yaw angle}
+    \label{fihttps://ieeexplore.ieee.org/document/8748953g:Fig2}
+    \end{figure}
+
+\end{itemize}
+
+Finally, with the \textit{tkinter} library, each one of the eight possible commands ( 2 directions for the four environment parameters ) are assigned to a letter on the keyboard. When one of these letters is pressed, one of the two previous functions is called with the right parameters to send it to the simulation. It is important to mention that by pressing a letter, the velocity of the motion is not changed via this program. However, since the velocity is a parameter that is entered to the functions, changing velocity according to the output of the neural network will be done the same way as changing position.
+
+In order to get closer to the real implementation of the NN, another code named \textit{control\_while\_loop.py} was compiled. This code reads a txt file (supposedly generated by the NN, in this preliminary case manually written by the user) and implements a "match" scenario to figure out witch specific command to send to the drone. Note the use of the same functions as before to control the parameters. Here velocity can be controlled from the txt file.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{Match.png}
+    \caption{Match case to figure out the command}
+    \label{fihttps://ieeexplore.ieee.org/document/8748953g:Fig2}
+    \end{figure}
+
+Note also that with this scenario, the velocity is directly commanded via a proportional formula relative to the maximum possible velocity in that direction, thus never exceeding possible physical limitations, both in the positive and negative direction.
+
+\section{Experimental results}
+
+\subsection{Results}
+The data collected were used to train the model. The dataset was divided in three groups:
+\begin{itemize}
+    \item training set, containing 60\% of the data
+    \item validation set, containing 20\% of data
+    \item testing set, with the remaining 20\%
+\end{itemize}
+The network was trained over 100 epochs
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{accuracy.png}
+    \caption{Accuracy over epochs}
+    \label{fihttps://ieeexplore.ieee.org/document/8748953g:Fig2}
+    \end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{loss.png}
+    \caption{Loss over epochs}
+    \label{fihttps://ieeexplore.ieee.org/document/8748953g:Fig2}
+    \end{figure}
+On the testing set the accuracy is 91.8 with a loss of 1.56
+
+By running one of the two test Python scripts, a simulation of a drone based on ardupilot is running on gazebo and can be controlled as the same time either from the keyboard or a txt file, exactly the same way as if it was done from a remote control. All four parameters ( altitude, roll, pitch and yaw ) and their velocities can be controlled in both directions.
+
+\section{Conclusion}
+The high accuracy of the network testing suggests that the model has learned to effectively distinguish between different gesture classes. The test loss indicates a relatively low error rate in the model's predictions. Overall, these results are promising and indicate that the GestureNet model is a viable solution for gesture recognition tasks. However, further analysis and comparison with other state-of-the-art methods would be beneficial to fully assess its performance.
+
+The impossibility of having access to the LeapCamera after the initial collection of data prevented us from properly testing the whole system and having validation of our setup. All the necessary scripts have been developed, but not tested in a real environment. We expect some issue on the comunication side between camera and neural newtork due to different rates. A buffer has been implemented on the incoming data to limit this issue. We could also accept to loose some of the data, but this would require some additional tests. Another possible improvement that we want to highlight concerns the gesture classification, which for the moment is limited to very specific movements (e.g. moving hands up or down starting from a flat configuration). This may result in a limited control of the drone and may cause some issues on a real flight. Therefore, an extension of the clessifier is recommended before usage.
+\end{document}
+
